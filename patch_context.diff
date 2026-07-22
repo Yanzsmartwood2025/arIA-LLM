@@ -1,9 +1,27 @@
-'use client';
+<<<<<<< SEARCH
+interface ApiKeysContextType {
+  geminiKey: string;
+  setGeminiKey: (key: string) => void;
+  groqKey: string;
+  setGroqKey: (key: string) => void;
+  julesKey: string;
+  setJulesKey: (key: string) => void;
+}
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+const ApiKeysContext = createContext<ApiKeysContextType | undefined>(undefined);
 
-// TODO: persistencia real vía Supabase con cifrado del lado del servidor (PBKDF2 + AES-256), ver /docs/blueprint.md sección 7 — nunca implementar persistencia en el navegador sin cifrado real equivalente.
+export function ApiKeysProvider({ children }: { children: ReactNode }) {
+  const [geminiKey, setGeminiKey] = useState('');
+  const [groqKey, setGroqKey] = useState('');
+  const [julesKey, setJulesKey] = useState('');
 
+  return (
+    <ApiKeysContext.Provider value={{
+      geminiKey, setGeminiKey,
+      groqKey, setGroqKey,
+      julesKey, setJulesKey
+    }}>
+=======
 interface ApiKeysContextType {
   geminiKey: string;
   setGeminiKey: (key: string) => void;
@@ -30,15 +48,4 @@ export function ApiKeysProvider({ children }: { children: ReactNode }) {
       julesKey, setJulesKey,
       useAriaKeys, setUseAriaKeys
     }}>
-      {children}
-    </ApiKeysContext.Provider>
-  );
-}
-
-export function useApiKeys() {
-  const context = useContext(ApiKeysContext);
-  if (context === undefined) {
-    throw new Error('useApiKeys must be used within an ApiKeysProvider');
-  }
-  return context;
-}
+>>>>>>> REPLACE
