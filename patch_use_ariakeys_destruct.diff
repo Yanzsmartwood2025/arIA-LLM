@@ -1,0 +1,5 @@
+<<<<<<< SEARCH
+  const { geminiKey, groqKey } = useApiKeys();
+=======
+  const { geminiKey, groqKey, useAriaKeys, setUseAriaKeys } = useApiKeys();
+>>>>>>> REPLACE

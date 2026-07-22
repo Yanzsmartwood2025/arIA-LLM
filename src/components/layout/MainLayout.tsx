@@ -33,7 +33,7 @@ export function MainLayout() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [noKeyModalOpen, setNoKeyModalOpen] = useState(false);
 
-  const { geminiKey, groqKey } = useApiKeys();
+  const { geminiKey, groqKey, useAriaKeys, setUseAriaKeys } = useApiKeys();
   const [selectedEngine, setSelectedEngine] = useState('arIA Flash');
 
   const [inputMessage, setInputMessage] = useState('');
@@ -41,20 +41,22 @@ export function MainLayout() {
   const [isLoading, setIsLoading] = useState(false);
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
 
-  const engines = ['arIA Flash', 'arIA Núcleo', 'arIA Visión', 'arIA Órbita'];
+  const engines = ['arIA Flash', 'arIA Visión', 'arIA Pro', 'arIA Núcleo', 'arIA Órbita', 'arIA Cúmulo'];
 
   const getProviderForKey = (engine: string) => {
-    if (engine === 'arIA Flash' || engine === 'arIA Visión') return 'gemini';
-    if (engine === 'arIA Núcleo' || engine === 'arIA Órbita') return 'groq';
+    if (engine === 'arIA Flash' || engine === 'arIA Visión' || engine === 'arIA Pro') return 'gemini';
+    if (engine === 'arIA Núcleo' || engine === 'arIA Órbita' || engine === 'arIA Cúmulo') return 'groq';
     return 'gemini';
   };
 
   const getModelName = (engine: string) => {
-    if (engine === 'arIA Flash') return 'gemini-flash-latest';
+    if (engine === 'arIA Flash') return 'gemini-2.5-flash-lite';
+    if (engine === 'arIA Visión') return 'gemini-2.5-flash';
+    if (engine === 'arIA Pro') return 'gemini-2.5-pro';
     if (engine === 'arIA Núcleo') return 'llama-3.1-8b-instant';
-    if (engine === 'arIA Visión') return 'gemini-2.5-pro';
-    if (engine === 'arIA Órbita') return 'llama-3.3-70b-versatile';
-    return 'gemini-flash-latest';
+    if (engine === 'arIA Órbita') return 'openai/gpt-oss-20b';
+    if (engine === 'arIA Cúmulo') return 'llama-3.3-70b-versatile';
+    return 'gemini-2.5-flash';
   };
 
   const handleSendMessage = async (forceServerCall = false) => {
@@ -70,7 +72,7 @@ export function MainLayout() {
     const provider = getProviderForKey(selectedEngine);
     const userKey = provider === 'gemini' ? geminiKey : groqKey;
 
-    if (!userKey && !forceServerCall) {
+    if (!userKey && !useAriaKeys && !forceServerCall) {
       setPendingMessage(messageToSend);
       setNoKeyModalOpen(true);
       return;
@@ -80,8 +82,10 @@ export function MainLayout() {
     setMessages(newMessages);
     setIsLoading(true);
 
+    const isServerCall = forceServerCall || useAriaKeys || !userKey;
+
     try {
-      if (userKey) {
+      if (!isServerCall) {
         // Direct call to provider from client
         let responseText = '';
         const modelName = getModelName(selectedEngine);
@@ -150,21 +154,18 @@ export function MainLayout() {
   };
 
   useEffect(() => {
-    if (pendingMessage && (geminiKey || groqKey)) {
-      let provider = 'gemini';
-      if (selectedEngine === 'arIA Flash' || selectedEngine === 'arIA Visión') provider = 'gemini';
-      if (selectedEngine === 'arIA Núcleo' || selectedEngine === 'arIA Órbita') provider = 'groq';
-
+    if (pendingMessage && (geminiKey || groqKey || useAriaKeys)) {
+      const provider = getProviderForKey(selectedEngine);
       const userKey = provider === 'gemini' ? geminiKey : groqKey;
 
-      if (userKey) {
+      if (userKey || useAriaKeys) {
         // Use a timeout to avoid synchronous setState inside useEffect
         setTimeout(() => {
           handleSendMessage();
         }, 0);
       }
     }
-  }, [geminiKey, groqKey, pendingMessage, selectedEngine]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [geminiKey, groqKey, useAriaKeys, pendingMessage, selectedEngine]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="flex h-screen overflow-hidden bg-[var(--background)] text-white">
@@ -214,7 +215,22 @@ export function MainLayout() {
           </div>
         </div>
 
-        <div className="border-t border-gray-800 p-4">
+        <div className="border-t border-gray-800 p-4 space-y-3">
+          <div className="flex items-center justify-between rounded-lg px-2 py-1">
+            <span className="text-sm text-gray-300">Modo prueba (arIA)</span>
+            <button
+              onClick={() => setUseAriaKeys(!useAriaKeys)}
+              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-900 ${
+                useAriaKeys ? 'bg-white' : 'bg-gray-600'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-black transition-transform ${
+                  useAriaKeys ? 'translate-x-4' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
           <button
             onClick={() => setSettingsOpen(true)}
             className="flex w-full items-center gap-3 rounded-lg p-2 hover:bg-gray-900 transition-colors"
@@ -222,7 +238,7 @@ export function MainLayout() {
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-800">
               <User size={16} className="text-gray-400" />
             </div>
-            <span className="text-sm font-medium">Perfil de usuario</span>
+            <span className="text-sm font-medium">Perfil de usuario / BYOK</span>
           </button>
         </div>
       </aside>
@@ -475,7 +491,11 @@ export function MainLayout() {
         <NoKeyModal
           onClose={() => setNoKeyModalOpen(false)}
           onOpenSettings={() => setSettingsOpen(true)}
-          onTryAria={() => handleSendMessage(true)}
+          onTryAria={() => {
+            setUseAriaKeys(true);
+            setNoKeyModalOpen(false);
+            handleSendMessage(true);
+          }}
         />
       )}
     </div>
