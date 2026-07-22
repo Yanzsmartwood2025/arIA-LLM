@@ -14,12 +14,15 @@ import {
   MonitorSmartphone,
   Bot
 } from 'lucide-react';
+import { ApiKeysSettings } from '@/components/settings/ApiKeysSettings';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 export function MainLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [engineDropdownOpen, setEngineDropdownOpen] = useState(false);
   const [menuDropdownOpen, setMenuDropdownOpen] = useState(false);
   const [plusDropdownOpen, setPlusDropdownOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   return (
     <div className="flex h-screen overflow-hidden bg-[var(--background)] text-white">
@@ -37,15 +40,19 @@ export function MainLayout() {
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="flex items-center justify-center p-6 pb-2">
-          <Image
-            src="/branding/aria-logo-source.png"
-            alt="arIA Logo"
-            width={120}
-            height={45}
-            className="object-contain"
-            priority
-          />
+        <div className="flex items-center justify-between p-4 pb-2">
+          <div className="flex items-center gap-2 px-2">
+            <div className="w-6 h-6 relative overflow-hidden rounded-sm flex-shrink-0">
+              <Image
+                src="/branding/aria-logo-source.png"
+                alt="arIA Logo"
+                fill
+                className="object-cover object-[right_center]"
+                sizes="24px"
+              />
+            </div>
+            <span className="text-xl font-bold tracking-tight">arIA</span>
+          </div>
         </div>
 
         <div className="flex gap-2 p-4">
@@ -66,7 +73,10 @@ export function MainLayout() {
         </div>
 
         <div className="border-t border-gray-800 p-4">
-          <button className="flex w-full items-center gap-3 rounded-lg p-2 hover:bg-gray-900 transition-colors">
+          <button
+            onClick={() => setSettingsOpen(true)}
+            className="flex w-full items-center gap-3 rounded-lg p-2 hover:bg-gray-900 transition-colors"
+          >
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-800">
               <User size={16} className="text-gray-400" />
             </div>
@@ -104,21 +114,38 @@ export function MainLayout() {
                   setPlusDropdownOpen(false);
                 }}
               >
-                <div className="flex flex-col items-start">
-                  <span className="text-lg font-bold leading-none tracking-tight">arIA</span>
-                  <span className="text-xs text-gray-500">Gemini</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 relative overflow-hidden rounded-sm flex-shrink-0">
+                    <Image
+                      src="/branding/aria-logo-source.png"
+                      alt="arIA Logo"
+                      fill
+                      className="object-cover object-[right_center]"
+                      sizes="20px"
+                    />
+                  </div>
+                  <div className="flex flex-col items-start">
+                    <span className="text-lg font-bold leading-none tracking-tight">arIA</span>
+                    <span className="text-xs text-gray-500">arIA Flash</span>
+                  </div>
                 </div>
-                <ChevronDown size={14} className="text-gray-500" />
+                <ChevronDown size={14} className="text-gray-500 ml-1" />
               </button>
 
               {/* Engine Dropdown */}
               {engineDropdownOpen && (
                 <div className="absolute left-0 top-full mt-2 w-48 rounded-lg border border-gray-800 bg-[#111] p-1 shadow-xl z-50">
                   <button className="flex w-full items-center px-3 py-2 text-sm hover:bg-gray-800 rounded-md">
-                    Gemini
+                    arIA Flash
                   </button>
                   <button className="flex w-full items-center px-3 py-2 text-sm hover:bg-gray-800 rounded-md">
-                    Groq
+                    arIA Núcleo
+                  </button>
+                  <button className="flex w-full items-center px-3 py-2 text-sm hover:bg-gray-800 rounded-md">
+                    arIA Visión
+                  </button>
+                  <button className="flex w-full items-center px-3 py-2 text-sm hover:bg-gray-800 rounded-md">
+                    arIA Órbita
                   </button>
                   <div className="my-1 h-px bg-gray-800" />
                   <button className="flex w-full items-center px-3 py-2 text-sm text-blue-400 hover:bg-gray-800 rounded-md">
@@ -238,6 +265,13 @@ export function MainLayout() {
             setPlusDropdownOpen(false);
           }}
         />
+      )}
+
+      {/* Settings Modal */}
+      {settingsOpen && (
+        <ErrorBoundary>
+          <ApiKeysSettings onClose={() => setSettingsOpen(false)} />
+        </ErrorBoundary>
       )}
     </div>
   );
