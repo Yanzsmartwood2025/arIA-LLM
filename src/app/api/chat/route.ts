@@ -13,20 +13,20 @@ export async function POST(req: Request) {
     // Assuming 'aria-flash' or 'aria-nucleo' maps to Gemini, and others map to Groq, etc.
     // For now, let's map 'arIA Flash' to gemini and 'arIA Núcleo' to groq as an example.
     let provider: Provider = 'gemini'; // Default
-    let modelName = 'gemini-1.5-flash';
+    let modelName = 'gemini-flash-latest';
 
     if (engine === 'arIA Flash') {
       provider = 'gemini';
-      modelName = 'gemini-1.5-flash';
+      modelName = 'gemini-flash-latest';
     } else if (engine === 'arIA Núcleo') {
       provider = 'groq';
-      modelName = 'llama3-8b-8192'; // Example Groq model
+      modelName = 'llama-3.1-8b-instant';
     } else if (engine === 'arIA Visión') {
       provider = 'gemini';
-      modelName = 'gemini-1.5-pro';
+      modelName = 'gemini-2.5-pro';
     } else if (engine === 'arIA Órbita') {
       provider = 'groq';
-      modelName = 'mixtral-8x7b-32768';
+      modelName = 'llama-3.3-70b-versatile';
     }
 
     // TODO: No implementes facturación/consumo todavía.

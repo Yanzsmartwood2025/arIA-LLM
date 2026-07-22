@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import {
   Menu,
@@ -50,11 +50,11 @@ export function MainLayout() {
   };
 
   const getModelName = (engine: string) => {
-    if (engine === 'arIA Flash') return 'gemini-1.5-flash';
-    if (engine === 'arIA Núcleo') return 'llama3-8b-8192';
-    if (engine === 'arIA Visión') return 'gemini-1.5-pro';
-    if (engine === 'arIA Órbita') return 'mixtral-8x7b-32768';
-    return 'gemini-1.5-flash';
+    if (engine === 'arIA Flash') return 'gemini-flash-latest';
+    if (engine === 'arIA Núcleo') return 'llama-3.1-8b-instant';
+    if (engine === 'arIA Visión') return 'gemini-2.5-pro';
+    if (engine === 'arIA Órbita') return 'llama-3.3-70b-versatile';
+    return 'gemini-flash-latest';
   };
 
   const handleSendMessage = async (forceServerCall = false) => {
@@ -148,6 +148,23 @@ export function MainLayout() {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (pendingMessage && (geminiKey || groqKey)) {
+      let provider = 'gemini';
+      if (selectedEngine === 'arIA Flash' || selectedEngine === 'arIA Visión') provider = 'gemini';
+      if (selectedEngine === 'arIA Núcleo' || selectedEngine === 'arIA Órbita') provider = 'groq';
+
+      const userKey = provider === 'gemini' ? geminiKey : groqKey;
+
+      if (userKey) {
+        // Use a timeout to avoid synchronous setState inside useEffect
+        setTimeout(() => {
+          handleSendMessage();
+        }, 0);
+      }
+    }
+  }, [geminiKey, groqKey, pendingMessage, selectedEngine]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="flex h-screen overflow-hidden bg-[var(--background)] text-white">
