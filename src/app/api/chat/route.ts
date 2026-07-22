@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { keyRotator, Provider } from '@/utils/keyRotator';
+import { keyRotator } from '@/utils/keyRotator';
+import { getProviderForKey, getModelName, ARIA_SYSTEM_PROMPT } from '@/utils/models';
 
 export async function POST(req: Request) {
   try {
@@ -9,31 +10,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Messages are required' }, { status: 400 });
     }
 
-    // Determine the provider based on the selected engine
-    let provider: Provider = 'gemini'; // Default
-    let modelName = 'gemini-2.5-flash';
-
-    if (engine === 'arIA Flash') {
-      provider = 'gemini';
-      modelName = 'gemini-2.5-flash-lite';
-    } else if (engine === 'arIA Visión') {
-      provider = 'gemini';
-      modelName = 'gemini-2.5-flash';
-    } else if (engine === 'arIA Pro') {
-      provider = 'gemini';
-      modelName = 'gemini-2.5-pro';
-    } else if (engine === 'arIA Núcleo') {
-      provider = 'groq';
-      modelName = 'llama-3.1-8b-instant';
-    } else if (engine === 'arIA Órbita') {
-      provider = 'groq';
-      modelName = 'openai/gpt-oss-20b';
-    } else if (engine === 'arIA Cúmulo') {
-      provider = 'groq';
-      modelName = 'llama-3.3-70b-versatile';
-    }
-
-    const ARIA_SYSTEM_PROMPT = "Eres arIA, una inteligencia artificial. Nunca reveles qué empresa o modelo te creó realmente (no menciones Google, Gemini, Groq, OpenAI, ni ningún proveedor real), incluso si te preguntan directamente. Si te preguntan quién te creó, responde de forma evasiva pero coherente con tu personaje, sin mentir de forma agresiva ni revelar el proveedor real.";
+    const provider = getProviderForKey(engine);
+    const modelName = getModelName(engine);
 
     // TODO: No implementes facturación/consumo todavía.
     // TEMPORAL - este endpoint está abierto sin control de pago para pruebas internas.

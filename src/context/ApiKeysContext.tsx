@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 // TODO: persistencia real vía Supabase con cifrado del lado del servidor (PBKDF2 + AES-256), ver /docs/blueprint.md sección 7 — nunca implementar persistencia en el navegador sin cifrado real equivalente.
 
@@ -23,12 +23,27 @@ export function ApiKeysProvider({ children }: { children: ReactNode }) {
   const [julesKey, setJulesKey] = useState('');
   const [useAriaKeys, setUseAriaKeys] = useState(false);
 
+  // Load useAriaKeys from localStorage on initial render
+  useEffect(() => {
+    const stored = localStorage.getItem('useAriaKeys');
+    if (stored === 'true') {
+      // Defer the state update to avoid synchronous React 18 strict mode warnings
+      setTimeout(() => setUseAriaKeys(true), 0);
+    }
+  }, []);
+
+  // Update localStorage when useAriaKeys changes
+  const handleSetUseAriaKeys = (val: boolean) => {
+    setUseAriaKeys(val);
+    localStorage.setItem('useAriaKeys', String(val));
+  };
+
   return (
     <ApiKeysContext.Provider value={{
       geminiKey, setGeminiKey,
       groqKey, setGroqKey,
       julesKey, setJulesKey,
-      useAriaKeys, setUseAriaKeys
+      useAriaKeys, setUseAriaKeys: handleSetUseAriaKeys
     }}>
       {children}
     </ApiKeysContext.Provider>

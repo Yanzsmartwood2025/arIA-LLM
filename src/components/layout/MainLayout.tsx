@@ -19,10 +19,12 @@ import { ApiKeysSettings } from '@/components/settings/ApiKeysSettings';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useApiKeys } from '@/context/ApiKeysContext';
 import { NoKeyModal } from '@/components/modals/NoKeyModal';
+import { getProviderForKey, getModelName, ENGINES } from '@/utils/models';
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
+  engine?: string;
 }
 
 export function MainLayout() {
@@ -41,23 +43,7 @@ export function MainLayout() {
   const [isLoading, setIsLoading] = useState(false);
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
 
-  const engines = ['arIA Flash', 'arIA Visión', 'arIA Pro', 'arIA Núcleo', 'arIA Órbita', 'arIA Cúmulo'];
-
-  const getProviderForKey = (engine: string) => {
-    if (engine === 'arIA Flash' || engine === 'arIA Visión' || engine === 'arIA Pro') return 'gemini';
-    if (engine === 'arIA Núcleo' || engine === 'arIA Órbita' || engine === 'arIA Cúmulo') return 'groq';
-    return 'gemini';
-  };
-
-  const getModelName = (engine: string) => {
-    if (engine === 'arIA Flash') return 'gemini-2.5-flash-lite';
-    if (engine === 'arIA Visión') return 'gemini-2.5-flash';
-    if (engine === 'arIA Pro') return 'gemini-2.5-pro';
-    if (engine === 'arIA Núcleo') return 'llama-3.1-8b-instant';
-    if (engine === 'arIA Órbita') return 'openai/gpt-oss-20b';
-    if (engine === 'arIA Cúmulo') return 'llama-3.3-70b-versatile';
-    return 'gemini-2.5-flash';
-  };
+  const engines = ENGINES;
 
   const handleSendMessage = async (forceServerCall = false) => {
     const messageToSend = pendingMessage || inputMessage.trim();
@@ -126,7 +112,7 @@ export function MainLayout() {
           responseText = data.choices?.[0]?.message?.content || '';
         }
 
-        setMessages([...newMessages, { role: 'assistant', content: responseText }]);
+        setMessages([...newMessages, { role: 'assistant', content: responseText, engine: selectedEngine }]);
 
       } else {
         // Call backend route
@@ -142,12 +128,12 @@ export function MainLayout() {
           throw new Error(data.error || 'Server error');
         }
 
-        setMessages([...newMessages, { role: 'assistant', content: data.content }]);
+        setMessages([...newMessages, { role: 'assistant', content: data.content, engine: selectedEngine }]);
       }
     } catch (error: unknown) {
       console.error(error);
       const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-      setMessages([...newMessages, { role: 'assistant', content: `Error: ${errorMsg}` }]);
+      setMessages([...newMessages, { role: 'assistant', content: `Error: ${errorMsg}`, engine: selectedEngine }]);
     } finally {
       setIsLoading(false);
     }
@@ -373,7 +359,7 @@ export function MainLayout() {
                             sizes="20px"
                           />
                         </div>
-                        <span className="font-semibold text-sm text-gray-400">{selectedEngine}</span>
+                        <span className="font-semibold text-sm text-gray-400">{msg.engine || 'arIA Flash'}</span>
                        </div>
                     )}
                     <div className="whitespace-pre-wrap">{msg.content}</div>
