@@ -40,6 +40,8 @@ export const viewport: Viewport = {
   maximumScale: 1,
 };
 
+import { ApiKeysProvider } from "@/context/ApiKeysContext";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -52,7 +54,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <ApiKeysProvider>
+          {children}
+        </ApiKeysProvider>
         <script
           dangerouslySetInnerHTML={{
             __html: `
