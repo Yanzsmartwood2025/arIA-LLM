@@ -14,8 +14,16 @@ import {
   MonitorSmartphone,
   Bot
 } from 'lucide-react';
+import { Send, Loader2 } from 'lucide-react';
 import { ApiKeysSettings } from '@/components/settings/ApiKeysSettings';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { useApiKeys } from '@/context/ApiKeysContext';
+import { NoKeyModal } from '@/components/modals/NoKeyModal';
+
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+}
 
 export function MainLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -23,6 +31,123 @@ export function MainLayout() {
   const [menuDropdownOpen, setMenuDropdownOpen] = useState(false);
   const [plusDropdownOpen, setPlusDropdownOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [noKeyModalOpen, setNoKeyModalOpen] = useState(false);
+
+  const { geminiKey, groqKey } = useApiKeys();
+  const [selectedEngine, setSelectedEngine] = useState('arIA Flash');
+
+  const [inputMessage, setInputMessage] = useState('');
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [pendingMessage, setPendingMessage] = useState<string | null>(null);
+
+  const engines = ['arIA Flash', 'arIA Núcleo', 'arIA Visión', 'arIA Órbita'];
+
+  const getProviderForKey = (engine: string) => {
+    if (engine === 'arIA Flash' || engine === 'arIA Visión') return 'gemini';
+    if (engine === 'arIA Núcleo' || engine === 'arIA Órbita') return 'groq';
+    return 'gemini';
+  };
+
+  const getModelName = (engine: string) => {
+    if (engine === 'arIA Flash') return 'gemini-1.5-flash';
+    if (engine === 'arIA Núcleo') return 'llama3-8b-8192';
+    if (engine === 'arIA Visión') return 'gemini-1.5-pro';
+    if (engine === 'arIA Órbita') return 'mixtral-8x7b-32768';
+    return 'gemini-1.5-flash';
+  };
+
+  const handleSendMessage = async (forceServerCall = false) => {
+    const messageToSend = pendingMessage || inputMessage.trim();
+    if (!messageToSend) return;
+
+    if (!pendingMessage) {
+      setInputMessage('');
+    }
+
+    setPendingMessage(null);
+
+    const provider = getProviderForKey(selectedEngine);
+    const userKey = provider === 'gemini' ? geminiKey : groqKey;
+
+    if (!userKey && !forceServerCall) {
+      setPendingMessage(messageToSend);
+      setNoKeyModalOpen(true);
+      return;
+    }
+
+    const newMessages: Message[] = [...messages, { role: 'user', content: messageToSend }];
+    setMessages(newMessages);
+    setIsLoading(true);
+
+    try {
+      if (userKey) {
+        // Direct call to provider from client
+        let responseText = '';
+        const modelName = getModelName(selectedEngine);
+
+        if (provider === 'gemini') {
+          const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${userKey}`;
+          const prompt = newMessages.map(m => `${m.role}: ${m.content}`).join('\n') + '\nassistant:';
+
+          const res = await fetch(geminiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }]
+            }),
+          });
+
+          if (!res.ok) throw new Error(`Gemini Error: ${res.statusText}`);
+          const data = await res.json();
+          responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+        } else if (provider === 'groq') {
+          const groqUrl = `https://api.groq.com/openai/v1/chat/completions`;
+
+          const res = await fetch(groqUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${userKey}`
+            },
+            body: JSON.stringify({
+              model: modelName,
+              messages: newMessages.map(m => ({ role: m.role, content: m.content }))
+            }),
+          });
+
+          if (!res.ok) throw new Error(`Groq Error: ${res.statusText}`);
+          const data = await res.json();
+          responseText = data.choices?.[0]?.message?.content || '';
+        }
+
+        setMessages([...newMessages, { role: 'assistant', content: responseText }]);
+
+      } else {
+        // Call backend route
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages: newMessages, engine: selectedEngine }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || 'Server error');
+        }
+
+        setMessages([...newMessages, { role: 'assistant', content: data.content }]);
+      }
+    } catch (error: unknown) {
+      console.error(error);
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      setMessages([...newMessages, { role: 'assistant', content: `Error: ${errorMsg}` }]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="flex h-screen overflow-hidden bg-[var(--background)] text-white">
@@ -126,7 +251,7 @@ export function MainLayout() {
                   </div>
                   <div className="flex flex-col items-start">
                     <span className="text-lg font-bold leading-none tracking-tight">arIA</span>
-                    <span className="text-xs text-gray-500">arIA Flash</span>
+                    <span className="text-xs text-gray-500">{selectedEngine}</span>
                   </div>
                 </div>
                 <ChevronDown size={14} className="text-gray-500 ml-1" />
@@ -135,18 +260,18 @@ export function MainLayout() {
               {/* Engine Dropdown */}
               {engineDropdownOpen && (
                 <div className="absolute left-0 top-full mt-2 w-48 rounded-lg border border-gray-800 bg-[#111] p-1 shadow-xl z-50">
-                  <button className="flex w-full items-center px-3 py-2 text-sm hover:bg-gray-800 rounded-md">
-                    arIA Flash
-                  </button>
-                  <button className="flex w-full items-center px-3 py-2 text-sm hover:bg-gray-800 rounded-md">
-                    arIA Núcleo
-                  </button>
-                  <button className="flex w-full items-center px-3 py-2 text-sm hover:bg-gray-800 rounded-md">
-                    arIA Visión
-                  </button>
-                  <button className="flex w-full items-center px-3 py-2 text-sm hover:bg-gray-800 rounded-md">
-                    arIA Órbita
-                  </button>
+                  {engines.map(engine => (
+                    <button
+                      key={engine}
+                      className={`flex w-full items-center px-3 py-2 text-sm hover:bg-gray-800 rounded-md ${selectedEngine === engine ? 'bg-gray-800' : ''}`}
+                      onClick={() => {
+                        setSelectedEngine(engine);
+                        setEngineDropdownOpen(false);
+                      }}
+                    >
+                      {engine}
+                    </button>
+                  ))}
                   <div className="my-1 h-px bg-gray-800" />
                   <button className="flex w-full items-center px-3 py-2 text-sm text-blue-400 hover:bg-gray-800 rounded-md">
                     + Agregar motor
@@ -185,17 +310,53 @@ export function MainLayout() {
           </div>
         </header>
 
-        {/* Chat Area (Empty State) */}
-        <div className="flex flex-1 flex-col items-center justify-center p-4">
-          <Image
-            src="/branding/aria-logo-source.png"
-            alt="arIA Logo"
-            width={240}
-            height={90}
-            className="mb-8 opacity-20 object-contain"
-            priority
-          />
-          <h2 className="text-2xl font-medium text-gray-300">¿En qué te puedo ayudar?</h2>
+        {/* Chat Area */}
+        <div className="flex flex-1 flex-col overflow-y-auto p-4 md:px-8 lg:px-24 xl:px-48 space-y-6">
+          {messages.length === 0 ? (
+            <div className="flex h-full flex-col items-center justify-center">
+              <Image
+                src="/branding/aria-logo-source.png"
+                alt="arIA Logo"
+                width={240}
+                height={90}
+                className="mb-8 opacity-20 object-contain"
+                priority
+              />
+              <h2 className="text-2xl font-medium text-gray-300">¿En qué te puedo ayudar?</h2>
+            </div>
+          ) : (
+            <div className="flex flex-col space-y-6 pb-20 pt-8">
+              {messages.map((msg, index) => (
+                <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[80%] rounded-2xl px-5 py-3 ${msg.role === 'user' ? 'bg-gray-800 text-white rounded-br-sm' : 'bg-transparent text-gray-200'}`}>
+                    {msg.role === 'assistant' && (
+                       <div className="flex items-center gap-2 mb-2">
+                        <div className="w-5 h-5 relative overflow-hidden rounded-sm flex-shrink-0">
+                          <Image
+                            src="/branding/aria-logo-source.png"
+                            alt="arIA Logo"
+                            fill
+                            className="object-cover object-[right_center]"
+                            sizes="20px"
+                          />
+                        </div>
+                        <span className="font-semibold text-sm text-gray-400">{selectedEngine}</span>
+                       </div>
+                    )}
+                    <div className="whitespace-pre-wrap">{msg.content}</div>
+                  </div>
+                </div>
+              ))}
+              {isLoading && (
+                <div className="flex justify-start">
+                  <div className="flex items-center gap-3 max-w-[80%] px-5 py-3 text-gray-400">
+                    <Loader2 size={18} className="animate-spin" />
+                    <span>arIA está pensando...</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Bottom Input Area */}
@@ -243,11 +404,29 @@ export function MainLayout() {
               className="max-h-32 min-h-[40px] w-full resize-none bg-transparent px-2 py-2 text-white placeholder-gray-400 outline-none"
               placeholder="Pregunta a arIA..."
               rows={1}
+              value={inputMessage}
+              onChange={(e) => setInputMessage(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendMessage();
+                }
+              }}
             />
 
-            <button className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
-              <Mic size={20} />
-            </button>
+            {inputMessage.trim() ? (
+              <button
+                onClick={() => handleSendMessage()}
+                disabled={isLoading}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-black hover:bg-gray-200 transition-colors disabled:opacity-50"
+              >
+                <Send size={18} />
+              </button>
+            ) : (
+              <button className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+                <Mic size={20} />
+              </button>
+            )}
           </div>
           <div className="mt-2 text-center text-xs text-gray-600">
             arIA puede cometer errores. Considera verificar la información importante.
@@ -272,6 +451,15 @@ export function MainLayout() {
         <ErrorBoundary>
           <ApiKeysSettings onClose={() => setSettingsOpen(false)} />
         </ErrorBoundary>
+      )}
+
+      {/* No Key Modal */}
+      {noKeyModalOpen && (
+        <NoKeyModal
+          onClose={() => setNoKeyModalOpen(false)}
+          onOpenSettings={() => setSettingsOpen(true)}
+          onTryAria={() => handleSendMessage(true)}
+        />
       )}
     </div>
   );
