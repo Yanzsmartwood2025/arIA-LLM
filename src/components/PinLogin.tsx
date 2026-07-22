@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 
 // TEMPORAL - reemplazar por Supabase Auth en sesión futura, no usar en producción
 export function PinLogin({ onLogin }: { onLogin: () => void }) {
@@ -23,8 +24,15 @@ export function PinLogin({ onLogin }: { onLogin: () => void }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[var(--background)] p-4">
       <div className="w-full max-w-sm rounded-xl border border-gray-800 bg-[#111] p-8 shadow-2xl">
-        <div className="mb-8 text-center">
-          <h1 className="mb-2 text-3xl font-bold tracking-tight text-white">arIA</h1>
+        <div className="mb-8 flex flex-col items-center text-center">
+          <Image
+            src="/branding/aria-logo-source.png"
+            alt="arIA Logo"
+            width={160}
+            height={60}
+            className="mb-4 object-contain"
+            priority
+          />
           <p className="text-sm text-gray-400">Acceso de desarrollo</p>
         </div>
 
