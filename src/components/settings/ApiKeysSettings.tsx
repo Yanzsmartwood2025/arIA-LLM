@@ -41,7 +41,7 @@ export function ApiKeysSettings({ onClose }: Props) {
           window.open('https://jules.google.com/settings', '_blank');
         } else {
           // Mostrar los repos conectados
-          setJulesRepos(sources.map((s: any) => ({
+          setJulesRepos(sources.map((s: { githubRepo?: { repo: string, owner: string }, name: string }) => ({
             displayName: s.githubRepo?.repo ? `${s.githubRepo.owner}/${s.githubRepo.repo}` : s.name
           })));
         }
