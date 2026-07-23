@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import {
   Menu,
@@ -36,6 +36,9 @@ export function MainLayout() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [noKeyModalOpen, setNoKeyModalOpen] = useState(false);
 
+  const headerRef = useRef<HTMLDivElement>(null);
+  const plusMenuRef = useRef<HTMLDivElement>(null);
+
   const { geminiKey, groqKey, useAriaKeys, setUseAriaKeys } = useApiKeys();
   const [selectedEngine, setSelectedEngine] = useState('arIA Flash');
   const [showSearchTooltip, setShowSearchTooltip] = useState(false);
@@ -56,11 +59,12 @@ export function MainLayout() {
     'arIA Cúmulo': 'Rápido con más capacidad de razonamiento',
   };
 
-  const handleSendMessage = async (forceServerCall = false) => {
-    const messageToSend = pendingMessage || inputMessage.trim();
+  const handleSendMessage = async (forceServerCall = false, overrideMessage?: string) => {
+    if (isLoading) return;
+    const messageToSend = overrideMessage || pendingMessage || inputMessage.trim();
     if (!messageToSend) return;
 
-    if (!pendingMessage) {
+    if (!overrideMessage && !pendingMessage) {
       setInputMessage('');
     }
 
@@ -154,18 +158,21 @@ export function MainLayout() {
   };
 
   useEffect(() => {
-    if (pendingMessage && (geminiKey || groqKey || useAriaKeys)) {
+    if (pendingMessage && (geminiKey || groqKey || useAriaKeys) && !isLoading) {
       const provider = getProviderForKey(selectedEngine);
       const userKey = provider === 'gemini' ? geminiKey : groqKey;
 
       if (userKey || useAriaKeys) {
-        // Use a timeout to avoid synchronous setState inside useEffect
+        // We capture the pendingMessage and call handleSendMessage locally
+        // to avoid infinite loops and re-renders if dependencies shift
+        const messageToSend = pendingMessage;
+        setPendingMessage(null);
         setTimeout(() => {
-          handleSendMessage();
+          handleSendMessage(false, messageToSend);
         }, 0);
       }
     }
-  }, [geminiKey, groqKey, useAriaKeys, pendingMessage, selectedEngine]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [geminiKey, groqKey, useAriaKeys, pendingMessage]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     // Avoid synchronous setState within effect by checking state first or running on next tick
@@ -173,6 +180,26 @@ export function MainLayout() {
     if (!tooltipDismissed) {
       setTimeout(() => setShowSearchTooltip(true), 0);
     }
+  }, []);
+
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent | TouchEvent) {
+      if (headerRef.current && !headerRef.current.contains(event.target as Node)) {
+        setEngineDropdownOpen(false);
+        setMenuDropdownOpen(false);
+      }
+      if (plusMenuRef.current && !plusMenuRef.current.contains(event.target as Node)) {
+        setPlusDropdownOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
   }, []);
 
   const handleDismissTooltip = () => {
@@ -259,7 +286,7 @@ export function MainLayout() {
       {/* Main Content */}
       <main className="flex flex-1 flex-col overflow-hidden relative">
         {/* Topbar */}
-        <header className={`flex h-16 items-center justify-between border-b border-gray-800/50 bg-[#0a0a0a]/80 px-4 backdrop-blur-sm ${engineDropdownOpen || menuDropdownOpen ? 'z-50' : 'z-30'}`}>
+        <header ref={headerRef} className={`flex h-16 items-center justify-between border-b border-gray-800/50 bg-[#0a0a0a]/80 px-4 backdrop-blur-sm ${engineDropdownOpen || menuDropdownOpen ? 'z-50' : 'z-30'}`}>
           <div className="flex items-center gap-3">
             <button
               className="p-2 text-gray-400 hover:text-white md:hidden"
@@ -430,7 +457,7 @@ export function MainLayout() {
         <div className={`p-4 md:px-8 lg:px-24 xl:px-48 ${plusDropdownOpen ? 'z-50' : 'z-20'}`}>
           <div className="relative flex items-end gap-2 rounded-2xl border border-gray-700 bg-[#1a1a1a] p-2 shadow-sm focus-within:border-gray-500 focus-within:ring-1 focus-within:ring-gray-500 transition-all">
 
-            <div className="relative">
+            <div className="relative" ref={plusMenuRef}>
               <button
                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gray-800 text-white hover:bg-gray-700 transition-colors"
                 onClick={() => {
@@ -501,17 +528,7 @@ export function MainLayout() {
         </div>
       </main>
 
-      {/* Global Click Handler to close dropdowns */}
-      {(engineDropdownOpen || menuDropdownOpen || plusDropdownOpen) && (
-        <div
-          className="fixed inset-0 z-40"
-          onClick={() => {
-            setEngineDropdownOpen(false);
-            setMenuDropdownOpen(false);
-            setPlusDropdownOpen(false);
-          }}
-        />
-      )}
+
 
       {/* Settings Modal */}
       {settingsOpen && (
