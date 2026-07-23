@@ -5,6 +5,7 @@ import Image from 'next/image';
 import {
   Menu,
   MoreHorizontal,
+  X,
   Plus,
   Mic,
   Search,
@@ -37,6 +38,7 @@ export function MainLayout() {
 
   const { geminiKey, groqKey, useAriaKeys, setUseAriaKeys } = useApiKeys();
   const [selectedEngine, setSelectedEngine] = useState('arIA Flash');
+  const [showSearchTooltip, setShowSearchTooltip] = useState(false);
 
   const [inputMessage, setInputMessage] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
@@ -44,6 +46,15 @@ export function MainLayout() {
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
 
   const engines = ENGINES;
+
+  const engineDescriptions: Record<string, string> = {
+    'arIA Flash': 'Respuestas rápidas y económicas',
+    'arIA Visión': 'Analiza imágenes y fotos',
+    'arIA Pro': 'Razonamiento profundo, el más potente',
+    'arIA Núcleo': 'Ultra rápido, ideal para tareas simples',
+    'arIA Órbita': 'Investiga y busca en internet',
+    'arIA Cúmulo': 'Rápido con más capacidad de razonamiento',
+  };
 
   const handleSendMessage = async (forceServerCall = false) => {
     const messageToSend = pendingMessage || inputMessage.trim();
@@ -84,7 +95,10 @@ export function MainLayout() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              contents: [{ parts: [{ text: prompt }] }]
+              contents: [{ parts: [{ text: prompt }] }],
+              // Note: Activating google_search incurs additional costs per query.
+              // The model decides autonomously when to execute a search.
+              tools: [{ google_search: {} }]
             }),
           });
 
@@ -152,6 +166,19 @@ export function MainLayout() {
       }
     }
   }, [geminiKey, groqKey, useAriaKeys, pendingMessage, selectedEngine]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    // Avoid synchronous setState within effect by checking state first or running on next tick
+    const tooltipDismissed = localStorage.getItem('aria_search_tooltip_dismissed');
+    if (!tooltipDismissed) {
+      setTimeout(() => setShowSearchTooltip(true), 0);
+    }
+  }, []);
+
+  const handleDismissTooltip = () => {
+    setShowSearchTooltip(false);
+    localStorage.setItem('aria_search_tooltip_dismissed', 'true');
+  };
 
   return (
     <div className="flex h-screen overflow-hidden bg-[var(--background)] text-white">
@@ -278,23 +305,44 @@ export function MainLayout() {
 
               {/* Engine Dropdown */}
               {engineDropdownOpen && (
-                <div className="absolute left-0 top-full mt-2 w-48 rounded-lg border border-gray-800 bg-[#111] p-1 shadow-xl z-50">
+                <div className="absolute left-0 top-full mt-2 w-64 rounded-lg border border-gray-800 bg-[#111] p-1 shadow-xl z-50">
                   {engines.map(engine => (
                     <button
                       key={engine}
-                      className={`flex w-full items-center px-3 py-2 text-sm hover:bg-gray-800 rounded-md ${selectedEngine === engine ? 'bg-gray-800' : ''}`}
+                      className={`flex w-full flex-col items-start px-3 py-2 text-sm hover:bg-gray-800 rounded-md ${selectedEngine === engine ? 'bg-gray-800' : ''}`}
                       onClick={() => {
                         setSelectedEngine(engine);
                         setEngineDropdownOpen(false);
                       }}
                     >
-                      {engine}
+                      <span className="font-medium text-gray-200">{engine}</span>
+                      <span className="text-xs text-gray-500 mt-0.5">{engineDescriptions[engine]}</span>
                     </button>
                   ))}
                   <div className="my-1 h-px bg-gray-800" />
                   <button className="flex w-full items-center px-3 py-2 text-sm text-blue-400 hover:bg-gray-800 rounded-md">
                     + Agregar motor
                   </button>
+                </div>
+              )}
+
+              {/* First Time Search Tooltip */}
+              {engineDropdownOpen && showSearchTooltip && (
+                <div className="absolute left-[265px] top-full mt-2 w-72 rounded-lg border border-blue-900 bg-blue-950/80 p-3 shadow-2xl z-50 animate-in fade-in slide-in-from-left-2 backdrop-blur-md">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-sm text-blue-100 leading-relaxed">
+                      💡 Algunos modelos pueden buscar en internet automáticamente cuando la pregunta lo requiere.
+                    </p>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDismissTooltip();
+                      }}
+                      className="text-blue-300 hover:text-white p-0.5 -mt-0.5 -mr-0.5 rounded-md hover:bg-blue-900/50 transition-colors shrink-0"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

@@ -26,7 +26,7 @@ export const getModelName = (engine: string): string => {
   if (engine === 'arIA Visión') return 'gemini-flash-latest';
   if (engine === 'arIA Pro') return 'gemini-pro-latest';
   if (engine === 'arIA Núcleo') return 'openai/gpt-oss-20b';
-  if (engine === 'arIA Órbita') return 'qwen/qwen3.6-27b';
+  if (engine === 'arIA Órbita') return 'groq/compound';
   if (engine === 'arIA Cúmulo') return 'openai/gpt-oss-120b';
 
   return 'gemini-flash-latest'; // fallback

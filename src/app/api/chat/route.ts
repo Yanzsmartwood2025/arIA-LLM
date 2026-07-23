@@ -44,7 +44,10 @@ export async function POST(req: Request) {
           {
             parts: [{ text: prompt }]
           }
-        ]
+        ],
+        // Note: Activating google_search incurs additional costs per query.
+        // The model decides autonomously when to execute a search.
+        tools: [{ google_search: {} }]
       };
 
       const res = await fetch(geminiUrl, {
