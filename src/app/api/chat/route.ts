@@ -75,7 +75,7 @@ export async function POST(req: Request) {
 
         if (!res.ok) {
           const err = await res.text();
-          console.error(`Gemini API Error (Status ${res.status}):`, err);
+          console.error(`Gemini API Error (Status ${res.status}) FULL BODY:`, err);
           throw new Error(`Gemini API error: ${res.status} ${res.statusText} - ${err}`);
         }
 
@@ -94,12 +94,21 @@ export async function POST(req: Request) {
 
          groqMessages.unshift({ role: 'system', content: ARIA_SYSTEM_PROMPT });
 
-         const groqPayloadStr = JSON.stringify({
+         const groqPayload = {
            model: modelName,
            messages: groqMessages,
-         });
+         };
+
+         const groqPayloadStr = JSON.stringify(groqPayload);
+
+         const systemPromptSize = new TextEncoder().encode(ARIA_SYSTEM_PROMPT).length;
+         const messagesSize = new TextEncoder().encode(JSON.stringify(groqMessages)).length;
+         const toolsSize = ('tools' in groqPayload) ? new TextEncoder().encode(JSON.stringify((groqPayload as any).tools)).length : 0;
+
+         console.log(`[route.ts] Groq Payload Breakdown: System=${systemPromptSize}b, Messages=${messagesSize}b, Tools=${toolsSize}b`);
 
          const payloadBytes = new TextEncoder().encode(groqPayloadStr).length;
+         console.log(`[route.ts] SYSTEM PROMPT length: ${ARIA_SYSTEM_PROMPT.length}, messages length: ${JSON.stringify(groqMessages).length}`);
          console.log(`[route.ts] Groq payload size (bytes): ${payloadBytes}, length (chars): ${groqPayloadStr.length}`);
 
          const res = await fetch(groqUrl, {

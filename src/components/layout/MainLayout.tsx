@@ -81,9 +81,9 @@ export function MainLayout() {
     'arIA Cúmulo': 'Rápido con más capacidad de razonamiento',
   };
 
-  const handleSendMessage = async (forceServerCall = false, overrideMessage?: string) => {
-    const traceId = Math.random().toString(36).substring(7);
-    console.log(`[MainLayout] handleSendMessage triggered. traceId=${traceId}, forceServerCall=${forceServerCall}, overrideMessage=${!!overrideMessage}, pendingMessage=${!!pendingMessage}`);
+  const handleSendMessage = async (forceServerCall = false, overrideMessage?: string, providedTraceId?: string) => {
+    const traceId = providedTraceId || Math.random().toString(36).substring(7);
+    console.log(`[MainLayout] handleSendMessage triggered. traceId=${traceId}, forceServerCall=${forceServerCall}, overrideMessage=${!!overrideMessage}, pendingMessage=${!!pendingMessage}, inputMessage=${!!inputMessage.trim()}`);
 
     if (isLoading) return;
     const messageToSend = overrideMessage || pendingMessage || inputMessage.trim();
@@ -95,7 +95,8 @@ export function MainLayout() {
 
     setPendingMessage(null);
 
-    const provider = getProviderForKey(selectedEngine);
+    console.log(`[MainLayout] useEffect triggered: pendingMessage=${!!pendingMessage}, isLoading=${isLoading}, geminiKey=${!!geminiKey}, groqKey=${!!groqKey}, useAriaKeys=${useAriaKeys}`);
+      const provider = getProviderForKey(selectedEngine);
     const userKey = provider === 'gemini' ? geminiKey : groqKey;
 
     if (!userKey && !useAriaKeys && !forceServerCall) {
@@ -189,6 +190,7 @@ export function MainLayout() {
   };
 
   useEffect(() => {
+    console.log(`[MainLayout] pendingMessage useEffect triggered: pendingMessage=${!!pendingMessage}, isLoading=${isLoading}, geminiKey=${!!geminiKey}, groqKey=${!!groqKey}, useAriaKeys=${useAriaKeys}`);
     if (pendingMessage && (geminiKey || groqKey || useAriaKeys) && !isLoading) {
       const provider = getProviderForKey(selectedEngine);
       const userKey = provider === 'gemini' ? geminiKey : groqKey;
@@ -199,7 +201,7 @@ export function MainLayout() {
         const messageToSend = pendingMessage;
         setPendingMessage(null);
         setTimeout(() => {
-          handleSendMessage(false, messageToSend);
+          handleSendMessage(false, messageToSend, 'useEffect-trace-' + Math.random().toString(36).substring(7));
         }, 0);
       }
     }
@@ -534,14 +536,14 @@ export function MainLayout() {
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
-                  handleSendMessage();
+                  handleSendMessage(false, undefined, 'enter-key-' + Math.random().toString(36).substring(7));
                 }
               }}
             />
 
             {inputMessage.trim() ? (
               <button
-                onClick={() => handleSendMessage()}
+                onClick={() => handleSendMessage(false, undefined, 'send-button-' + Math.random().toString(36).substring(7))}
                 disabled={isLoading}
                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white text-black hover:bg-gray-200 transition-colors disabled:opacity-50"
               >
@@ -576,7 +578,7 @@ export function MainLayout() {
           onTryAria={() => {
             setUseAriaKeys(true);
             setNoKeyModalOpen(false);
-            handleSendMessage(true);
+            handleSendMessage(true, undefined, 'aria-key-modal-' + Math.random().toString(36).substring(7));
           }}
         />
       )}
