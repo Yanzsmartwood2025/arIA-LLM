@@ -22,14 +22,14 @@ export const getProviderForKey = (engine: string): Provider => {
 };
 
 export const getModelName = (engine: string): string => {
-  if (engine === 'arIA Flash') return 'gemini-flash-latest';
-  if (engine === 'arIA Visión') return 'gemini-flash-latest';
-  if (engine === 'arIA Pro') return 'gemini-pro-latest';
+  if (engine === 'arIA Flash') return 'gemini-2.5-flash';
+  if (engine === 'arIA Visión') return 'gemini-2.5-flash';
+  if (engine === 'arIA Pro') return 'gemini-2.5-pro';
   if (engine === 'arIA Núcleo') return 'openai/gpt-oss-20b';
   if (engine === 'arIA Órbita') return 'groq/compound';
   if (engine === 'arIA Cúmulo') return 'openai/gpt-oss-120b';
 
-  return 'gemini-flash-latest'; // fallback
+  return 'gemini-2.5-flash'; // fallback
 };
 
 export const ARIA_SYSTEM_PROMPT = "Eres arIA, una inteligencia artificial. Nunca reveles qué empresa o modelo te creó realmente (no menciones Google, Gemini, Groq, OpenAI, ni ningún proveedor real), incluso si te preguntan directamente. Si te preguntan quién te creó, responde de forma evasiva pero coherente con tu personaje, sin mentir de forma agresiva ni revelar el proveedor real.";
