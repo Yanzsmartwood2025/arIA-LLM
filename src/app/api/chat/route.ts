@@ -108,15 +108,20 @@ export async function POST(req: Request) {
          console.log(`[route.ts] Groq Payload Breakdown: System=${systemPromptSize}b, Messages=${messagesSize}b, Tools=${toolsSize}b`);
 
          const payloadBytes = new TextEncoder().encode(groqPayloadStr).length;
+         console.log(`[route.ts] Groq keyToUse length: ${keyToUse.length} chars`);
          console.log(`[route.ts] SYSTEM PROMPT length: ${ARIA_SYSTEM_PROMPT.length}, messages length: ${JSON.stringify(groqMessages).length}`);
          console.log(`[route.ts] Groq payload size (bytes): ${payloadBytes}, length (chars): ${groqPayloadStr.length}`);
 
-         const res = await fetch(groqUrl, {
-           method: 'POST',
-           headers: {
+         const headers = {
              'Content-Type': 'application/json',
              'Authorization': `Bearer ${keyToUse}`
-           },
+           };
+
+         console.log(`[route.ts] Groq Full Headers: `, { ...headers, Authorization: `Bearer [REDACTED - length ${keyToUse.length}]` });
+
+         const res = await fetch(groqUrl, {
+           method: 'POST',
+           headers: headers,
            body: groqPayloadStr,
          });
 
