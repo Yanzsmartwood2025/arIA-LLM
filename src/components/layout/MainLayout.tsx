@@ -28,6 +28,28 @@ interface Message {
   engine?: string;
 }
 
+const MAX_PAYLOAD_CHARS = 8000;
+
+function truncateMessages(messages: Message[]): Message[] {
+  let currentLength = 0;
+  const truncated: Message[] = [];
+
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const msg = messages[i];
+    // approximate chars per message (role + content)
+    const msgLength = msg.role.length + msg.content.length;
+
+    if (currentLength + msgLength > MAX_PAYLOAD_CHARS && truncated.length > 0) {
+      break;
+    }
+
+    truncated.unshift(msg);
+    currentLength += msgLength;
+  }
+
+  return truncated;
+}
+
 export function MainLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [engineDropdownOpen, setEngineDropdownOpen] = useState(false);
@@ -60,6 +82,9 @@ export function MainLayout() {
   };
 
   const handleSendMessage = async (forceServerCall = false, overrideMessage?: string) => {
+    const traceId = Math.random().toString(36).substring(7);
+    console.log(`[MainLayout] handleSendMessage triggered. traceId=${traceId}, forceServerCall=${forceServerCall}, overrideMessage=${!!overrideMessage}, pendingMessage=${!!pendingMessage}`);
+
     if (isLoading) return;
     const messageToSend = overrideMessage || pendingMessage || inputMessage.trim();
     if (!messageToSend) return;
@@ -84,6 +109,8 @@ export function MainLayout() {
     setIsLoading(true);
 
     const isServerCall = forceServerCall || useAriaKeys || !userKey;
+    const messagesToSend = truncateMessages(newMessages);
+    console.log(`[MainLayout] Original messages: ${newMessages.length}, Truncated to send: ${messagesToSend.length}`);
 
     try {
       if (!isServerCall) {
@@ -93,7 +120,7 @@ export function MainLayout() {
 
         if (provider === 'gemini') {
           const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${userKey}`;
-          const prompt = newMessages.map(m => `${m.role}: ${m.content}`).join('\n') + '\nassistant:';
+          const prompt = messagesToSend.map(m => `${m.role}: ${m.content}`).join('\n') + '\nassistant:';
 
           const res = await fetch(geminiUrl, {
             method: 'POST',
@@ -113,16 +140,20 @@ export function MainLayout() {
         } else if (provider === 'groq') {
           const groqUrl = `https://api.groq.com/openai/v1/chat/completions`;
 
+          const groqPayloadStr = JSON.stringify({
+            model: modelName,
+            messages: messagesToSend.map(m => ({ role: m.role, content: m.content }))
+          });
+          const payloadBytes = new TextEncoder().encode(groqPayloadStr).length;
+          console.log(`[MainLayout] Groq BYOK payload size (bytes): ${payloadBytes}, chars: ${groqPayloadStr.length}`);
+
           const res = await fetch(groqUrl, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${userKey}`
             },
-            body: JSON.stringify({
-              model: modelName,
-              messages: newMessages.map(m => ({ role: m.role, content: m.content }))
-            }),
+            body: groqPayloadStr,
           });
 
           if (!res.ok) throw new Error(`Groq Error: ${res.statusText}`);
@@ -137,7 +168,7 @@ export function MainLayout() {
         const res = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messages: newMessages, engine: selectedEngine }),
+          body: JSON.stringify({ messages: messagesToSend, engine: selectedEngine }),
         });
 
         const data = await res.json();

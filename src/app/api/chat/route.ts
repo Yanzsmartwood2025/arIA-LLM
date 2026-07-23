@@ -94,16 +94,21 @@ export async function POST(req: Request) {
 
          groqMessages.unshift({ role: 'system', content: ARIA_SYSTEM_PROMPT });
 
+         const groqPayloadStr = JSON.stringify({
+           model: modelName,
+           messages: groqMessages,
+         });
+
+         const payloadBytes = new TextEncoder().encode(groqPayloadStr).length;
+         console.log(`[route.ts] Groq payload size (bytes): ${payloadBytes}, length (chars): ${groqPayloadStr.length}`);
+
          const res = await fetch(groqUrl, {
            method: 'POST',
            headers: {
              'Content-Type': 'application/json',
              'Authorization': `Bearer ${keyToUse}`
            },
-           body: JSON.stringify({
-             model: modelName,
-             messages: groqMessages,
-           }),
+           body: groqPayloadStr,
          });
 
          if (res.status === 429) {
