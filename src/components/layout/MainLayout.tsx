@@ -232,7 +232,7 @@ export function MainLayout() {
       {/* Main Content */}
       <main className="flex flex-1 flex-col overflow-hidden relative">
         {/* Topbar */}
-        <header className="flex h-16 items-center justify-between border-b border-gray-800/50 bg-[#0a0a0a]/80 px-4 backdrop-blur-sm z-30">
+        <header className="flex h-16 items-center justify-between border-b border-gray-800/50 bg-[#0a0a0a]/80 px-4 backdrop-blur-sm z-50">
           <div className="flex items-center gap-3">
             <button
               className="p-2 text-gray-400 hover:text-white md:hidden"
@@ -456,7 +456,7 @@ export function MainLayout() {
       {/* Global Click Handler to close dropdowns */}
       {(engineDropdownOpen || menuDropdownOpen || plusDropdownOpen) && (
         <div
-          className="fixed inset-0 z-40"
+          className="fixed inset-0 z-30"
           onClick={() => {
             setEngineDropdownOpen(false);
             setMenuDropdownOpen(false);
