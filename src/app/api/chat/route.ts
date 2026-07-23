@@ -33,8 +33,12 @@ export async function POST(req: Request) {
       try {
         keyToUse = keyRotator.getNextKey(provider);
       } catch (e: unknown) {
-        const errorMsg = e instanceof Error ? e.message : 'Rate limit exceeded';
-        return NextResponse.json({ error: errorMsg }, { status: 429 });
+        const errorMsg = e instanceof Error ? e.message : 'Unknown error occurred while getting key';
+        const isConfigError = errorMsg.includes('No server keys configured for provider');
+        return NextResponse.json(
+          { error: errorMsg },
+          { status: isConfigError ? 500 : 429 }
+        );
       }
 
       if (provider === 'gemini') {
@@ -71,8 +75,8 @@ export async function POST(req: Request) {
 
         if (!res.ok) {
           const err = await res.text();
-          console.error('Gemini API Error:', err);
-          throw new Error(`Gemini API error: ${res.statusText}`);
+          console.error(`Gemini API Error (Status ${res.status}):`, err);
+          throw new Error(`Gemini API error: ${res.status} ${res.statusText} - ${err}`);
         }
 
         const data = await res.json();
@@ -112,8 +116,8 @@ export async function POST(req: Request) {
 
          if (!res.ok) {
            const err = await res.text();
-           console.error('Groq API Error:', err);
-           throw new Error(`Groq API error: ${res.statusText}`);
+           console.error(`Groq API Error (Status ${res.status}):`, err);
+           throw new Error(`Groq API error: ${res.status} ${res.statusText} - ${err}`);
          }
 
          const data = await res.json();
