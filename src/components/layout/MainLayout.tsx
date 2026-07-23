@@ -259,7 +259,7 @@ export function MainLayout() {
       {/* Main Content */}
       <main className="flex flex-1 flex-col overflow-hidden relative">
         {/* Topbar */}
-        <header className="flex h-16 items-center justify-between border-b border-gray-800/50 bg-[#0a0a0a]/80 px-4 backdrop-blur-sm z-30">
+        <header className={`flex h-16 items-center justify-between border-b border-gray-800/50 bg-[#0a0a0a]/80 px-4 backdrop-blur-sm ${engineDropdownOpen || menuDropdownOpen ? 'z-50' : 'z-30'}`}>
           <div className="flex items-center gap-3">
             <button
               className="p-2 text-gray-400 hover:text-white md:hidden"
@@ -427,7 +427,7 @@ export function MainLayout() {
         </div>
 
         {/* Bottom Input Area */}
-        <div className="p-4 md:px-8 lg:px-24 xl:px-48 z-20">
+        <div className={`p-4 md:px-8 lg:px-24 xl:px-48 ${plusDropdownOpen ? 'z-50' : 'z-20'}`}>
           <div className="relative flex items-end gap-2 rounded-2xl border border-gray-700 bg-[#1a1a1a] p-2 shadow-sm focus-within:border-gray-500 focus-within:ring-1 focus-within:ring-gray-500 transition-all">
 
             <div className="relative">
