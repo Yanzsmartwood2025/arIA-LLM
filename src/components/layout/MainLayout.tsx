@@ -258,16 +258,15 @@ export function MainLayout() {
       >
         <div className="flex items-center justify-between p-4 pb-2">
           <div className="flex items-center gap-2 px-2">
-            <div className="w-6 h-6 relative overflow-hidden rounded-sm flex-shrink-0">
+            <div className="w-8 h-8 relative overflow-hidden rounded-sm flex-shrink-0">
               <Image
                 src="/branding/aria-logo-source.png"
                 alt="arIA Logo"
                 fill
                 className="object-cover object-[right_center]"
-                sizes="24px"
+                sizes="32px"
               />
             </div>
-            <span className="text-xl font-bold tracking-tight">arIA</span>
           </div>
         </div>
 
@@ -346,17 +345,16 @@ export function MainLayout() {
                 }}
               >
                 <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 relative overflow-hidden rounded-sm flex-shrink-0">
+                  <div className="w-6 h-6 relative overflow-hidden rounded-sm flex-shrink-0">
                     <Image
                       src="/branding/aria-logo-source.png"
                       alt="arIA Logo"
                       fill
                       className="object-cover object-[right_center]"
-                      sizes="20px"
+                      sizes="24px"
                     />
                   </div>
-                  <div className="flex flex-col items-start">
-                    <span className="text-lg font-bold leading-none tracking-tight">arIA</span>
+                  <div className="flex flex-col items-start justify-center h-full">
                     <span className="text-xs text-gray-500">{selectedEngine}</span>
                   </div>
                 </div>
