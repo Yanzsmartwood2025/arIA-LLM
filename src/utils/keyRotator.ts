@@ -14,9 +14,9 @@ export class KeyRotator {
 
   constructor() {
     this.keys = {
-      gemini: this.loadKeysForProvider('GEMINI_API_KEY_ARIA'),
-      groq: this.loadKeysForProvider('GROQ_API_KEY_ARIA'),
-      jules: this.loadKeysForProvider('JULES_API_KEY_ARIA'),
+      gemini: this.loadKeysForProvider('GEMINI_API_KEY_ARIA', 3),
+      groq: this.loadKeysForProvider('GROQ_API_KEY_ARIA', 20),
+      jules: this.loadKeysForProvider('JULES_API_KEY_ARIA', 3),
     };
 
     this.currentIndex = {
@@ -30,9 +30,9 @@ export class KeyRotator {
     // so the cooldown survives across instances.
   }
 
-  private loadKeysForProvider(prefix: string): KeyConfig[] {
+  private loadKeysForProvider(prefix: string, maxIndex: number = 3): KeyConfig[] {
     const loadedKeys: KeyConfig[] = [];
-    for (let i = 1; i <= 3; i++) {
+    for (let i = 1; i <= maxIndex; i++) {
       const envKey = `${prefix}_${i}`;
       const val = process.env[envKey];
       if (val) {
