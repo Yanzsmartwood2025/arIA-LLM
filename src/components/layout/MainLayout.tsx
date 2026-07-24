@@ -148,12 +148,22 @@ export function MainLayout() {
           const payloadBytes = new TextEncoder().encode(groqPayloadStr).length;
           console.log(`[MainLayout] Groq BYOK payload size (bytes): ${payloadBytes}, chars: ${groqPayloadStr.length}`);
 
+          const requestHeaders = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${userKey}`
+          };
+
+          const censoredHeaders = {
+            ...requestHeaders,
+            'Authorization': `Bearer ********* (longitud: ${userKey.length})`
+          };
+
+          console.log(`[MainLayout] Groq BYOK User Key length: ${userKey.length}`);
+          console.log(`[MainLayout] Groq BYOK Censored Headers:`, censoredHeaders);
+
           const res = await fetch(groqUrl, {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${userKey}`
-            },
+            headers: requestHeaders,
             body: groqPayloadStr,
           });
 
