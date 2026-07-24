@@ -111,12 +111,22 @@ export async function POST(req: Request) {
          console.log(`[route.ts] SYSTEM PROMPT length: ${ARIA_SYSTEM_PROMPT.length}, messages length: ${JSON.stringify(groqMessages).length}`);
          console.log(`[route.ts] Groq payload size (bytes): ${payloadBytes}, length (chars): ${groqPayloadStr.length}`);
 
+         const requestHeaders = {
+           'Content-Type': 'application/json',
+           'Authorization': `Bearer ${keyToUse}`
+         };
+
+         const censoredHeaders = {
+           ...requestHeaders,
+           'Authorization': `Bearer ********* (longitud: ${keyToUse.length})`
+         };
+
+         console.log(`[route.ts] Groq internal Key length: ${keyToUse.length}`);
+         console.log(`[route.ts] Groq internal Censored Headers:`, censoredHeaders);
+
          const res = await fetch(groqUrl, {
            method: 'POST',
-           headers: {
-             'Content-Type': 'application/json',
-             'Authorization': `Bearer ${keyToUse}`
-           },
+           headers: requestHeaders,
            body: groqPayloadStr,
          });
 
