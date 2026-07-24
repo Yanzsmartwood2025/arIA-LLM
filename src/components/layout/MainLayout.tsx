@@ -258,13 +258,13 @@ export function MainLayout() {
       >
         <div className="flex items-center justify-between p-4 pb-2">
           <div className="flex items-center gap-2 px-2">
-            <div className="w-8 h-8 relative overflow-hidden rounded-sm flex-shrink-0">
+            <div className="w-16 h-8 relative overflow-hidden rounded-sm flex-shrink-0">
               <Image
                 src="/branding/aria-logo-source.png"
                 alt="arIA Logo"
                 fill
-                className="object-cover object-[right_center]"
-                sizes="32px"
+                className="object-contain object-left"
+                sizes="64px"
               />
             </div>
           </div>
@@ -345,13 +345,13 @@ export function MainLayout() {
                 }}
               >
                 <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 relative overflow-hidden rounded-sm flex-shrink-0">
+                  <div className="w-10 h-6 relative overflow-hidden rounded-sm flex-shrink-0">
                     <Image
                       src="/branding/aria-logo-source.png"
                       alt="arIA Logo"
                       fill
-                      className="object-cover object-[right_center]"
-                      sizes="24px"
+                      className="object-contain object-left"
+                      sizes="40px"
                     />
                   </div>
                   <div className="flex flex-col items-start justify-center h-full">
@@ -456,13 +456,13 @@ export function MainLayout() {
                   <div className={`max-w-[80%] rounded-2xl px-5 py-3 ${msg.role === 'user' ? 'bg-gray-800 text-white rounded-br-sm' : 'bg-transparent text-gray-200'}`}>
                     {msg.role === 'assistant' && (
                        <div className="flex items-center gap-2 mb-2">
-                        <div className="w-5 h-5 relative overflow-hidden rounded-sm flex-shrink-0">
+                        <div className="w-8 h-5 relative overflow-hidden rounded-sm flex-shrink-0">
                           <Image
                             src="/branding/aria-logo-source.png"
                             alt="arIA Logo"
                             fill
-                            className="object-cover object-[right_center]"
-                            sizes="20px"
+                            className="object-contain object-left"
+                            sizes="32px"
                           />
                         </div>
                         <span className="font-semibold text-sm text-gray-400">{msg.engine || 'arIA Flash'}</span>
